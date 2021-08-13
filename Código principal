@@ -1,0 +1,148 @@
+class Jugador {
+	const property nombre
+	const property lugarDeOrigen
+	var property altura
+	var property porcentajeDeEficaciaDeTriples
+	const property talentos = []
+	var property esSucio
+	var property rol
+	method cambiarRol(nuevoRol) {
+		rol = nuevoRol
+	}
+	method habilidad() {
+		return rol.habilidad(self)
+	}
+	method eficaciaDeTriples() {
+		return porcentajeDeEficaciaDeTriples/100
+	}
+	method cantidadDeTalentos() {
+		return talentos.size()
+	}
+	method talentosEspeciales() {
+		return talentos.filter{talento => talento.length() > 10}
+	}
+	method cantidadDeTalentosEspeciales() {
+		return talentos.count{talento => talento.length() > 10}
+	}
+	method esCrack() {
+		return (rol.habilidad(self) > 90)
+	}
+}
+object tirador {
+	method habilidad(jugador) {
+		 if (jugador.esSucio()) return self.habilidadBasica(jugador)/2
+		else return self.habilidadBasica(jugador) + self.habilidadBasica(jugador)*0.1
+	}
+	method habilidadBasica(jugador) {
+		return jugador.eficaciaDeTriples()*jugador.cantidadDeTalentos()+jugador.altura()/3
+	}
+}
+object pasador {
+	method habilidad(jugador) {
+		return (jugador.altura()*0.75 + jugador.eficaciaDeTriples()*0.25)*jugador.cantidadDeTalentosEspeciales()
+	}
+}
+object rebotero {
+	method habilidadBasica(jugador) {
+		return jugador.altura() + jugador.eficaciaDeTriples()*0.25
+	}
+	method habilidad(jugador) {
+		if (jugador.esSucio()) return self.habilidadBasica(jugador)/2
+		else return self.habilidadBasica(jugador) + self.habilidadBasica(jugador)*0.1
+	}
+}
+object pescador inherits Jugador {
+	method habilidad(jugador) {
+		return jugador.altura() * 3
+	}
+}
+class Equipo {
+	var property localidad
+	var property jugadores = []
+	var property entrenador
+	var property puntos = 0
+	method meterPunto() {
+		puntos += 1
+	}
+	method reiniciarPuntos() {
+		puntos = 0
+	}
+	method puntaje() {
+		return ((self.valoracionTotal()).truncate(0))
+	}
+	method valoracionTotal() {
+		return (self.acumuladorDeHabilidadesDeLosJugadores()+self.habilidadDelEntrenador())/self.cantidadDeIntegrantes()
+	}
+	method esLocalista() {
+		return (jugadores.all({jugador => jugador.lugarDeOrigen() == localidad}) and entrenador.lugarDeOrigen() == localidad)
+	}
+	method cantidadDeJugadores() {
+		return jugadores.size()
+	}
+	method cantidadDeIntegrantes() {
+		return self.cantidadDeJugadores()+1
+	}
+	method acumuladorDeHabilidadesDeLosJugadores() {
+		return jugadores.sum{jugador => jugador.habilidad()}
+	}
+	method habilidadDelEntrenador() {
+		return entrenador.habilidad()
+	}
+}
+class Partido {
+	const property equipos = []
+	method agregarEquipo(unEquipo) {
+		equipos.add(unEquipo)
+	}
+	method eliminarEquipo(unEquipo) {
+		equipos.remove(unEquipo)
+	}
+	method jugarPartido(equipoUno, equipoDos) {
+		equipoUno.reiniciarPuntos()
+		equipoDos.reiniciarPuntos()
+	}
+	method unEquipoMetePunto(unEquipo) {
+		unEquipo.meterPunto()
+	}
+	method equipoGanador() {
+		return equipos.max({equipo => equipo.puntos()})
+	}
+	method victoriaEsAplastante(equipoUno,equipoDos) {
+		return(equipoUno.puntos()-20 > equipoDos.puntos() or equipoDos.puntos()-20 > equipoUno.puntos())
+	}
+}
+class Entrenador {
+	const property nombre
+	var property cantidadDeTorneosGanados
+	const property lugarDeOrigen
+	var property aniosQueLlevaSiendoEntrenador
+	method habilidad() {
+		return 0
+	}
+}
+class Sabio inherits Entrenador {
+	override method habilidad() {
+		return self.cantidadDeTorneosGanados() + self.aniosQueLlevaSiendoEntrenador()
+	}
+	method ganarMasTrofeos() {
+		cantidadDeTorneosGanados += 1
+	}
+}
+class VendeHumo inherits Entrenador {
+	var entrenadorDelQueSeCopia
+	override method habilidad() {
+		var j = entrenadorDelQueSeCopia.habilidad()
+		return j - j*0.25
+	}
+} 
+class EntrenadorInexperto inherits Entrenador {
+	method adquirirExperiencia() {
+		aniosQueLlevaSiendoEntrenador += 1
+	}
+	override method habilidad() {
+		return super() + aniosQueLlevaSiendoEntrenador
+	}
+}
+/* Esta es la manera correcta de hacerlo, usando polimorfismo en los jugadores y los roles, para que un jugador pueda
+ * cambiar de rol, y clases en los entrenadores, para no repetir código.
+ */
